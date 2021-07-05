@@ -1,0 +1,91 @@
+#!/bin/sh
+set -e
+
+usage () {
+  echo "Verify whether a Git host user has signed the Single CLA."
+  echo
+  echo "Usage: <github|gitlab> <handle>"
+}
+
+# Check arguments.
+host="$1"
+handle="$2"
+
+if [ -z "$host" ] || [ -z "$handle" ]; then
+  usage
+  exit 1
+fi
+
+case "$host" in
+  github)
+    host_display="GitHub"
+    user_raw="https://raw.githubusercontent.com/$handle/singlecla/main/cla.md"
+    ;;
+  gitlab)
+    host_display="GitLab"
+    user_raw="https://gitlab.com/$handle/singlecla/-/raw/main/cla.md"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
+
+# Create a temporary working directory.
+tmp=$(mktemp -d)
+cleanup () {
+  rm -rf "tmp"
+}
+trap cleanup EXIT
+cd "$tmp"
+
+if command -v wget >/dev/null; then
+  download () {
+    wget --quiet -O "$1" "$2"
+  }
+elif command -v curl >/dev/null; then
+  download () {
+    wget --quiet -O "$1" "$2"
+  }
+else
+  echo "Could not find either curl or wget on PATH.">/dev/stderr
+  exit 1
+fi
+
+# Download the user's cla.md file.
+if ! download user.md "$user_raw"; then
+  echo "Could not download the user's CLA file at $user_raw."
+  exit 1
+fi
+
+# Sanity-check the signature line.
+if ! grep "^Signed: /[^{}]\\+/$" user.md >/dev/null; then
+  echo "The user's signature is missing or malformed."
+  exit 1
+fi
+
+# Find the stated version of the user's cla.md.
+version=$(grep "^Version " user.md | sed 's/Version //')
+
+# Download the original template for that version.
+template_raw="https://raw.githubusercontent.com/singlecla/singlecla/v$version/cla.md"
+if ! download template.md "$template_raw"; then
+  echo "Could not download version $version of the Single CLA at $template_raw."
+  exit 1
+fi
+
+# Delete the signature lines from template and signed copy.
+sed -i "/^Signed:/d" user.md
+sed -i "/^Signed:/d" template.md
+
+# Compare remaining template and signed copy texts.
+if ! cmp user.md template.md >/dev/null; then
+  # If they don't match, print a diff to stderr and exit 1.
+  echo "$host_display user $handle's CLA does not match Single CLA version $version." >/dev/stderr
+  diff template.md user.md >/dev/stderr
+  exit 1
+fi
+
+# If they match, this users has signed a Single CLA.
+echo "$host_display user $handle has signed Single CLA version $version."
+exit 0
