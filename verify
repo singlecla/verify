@@ -16,6 +16,7 @@ if [ -z "$host" ] || [ -z "$handle" ]; then
   exit 1
 fi
 
+# Set variables based on host.
 case "$host" in
   github)
     host_display="GitHub"
@@ -39,6 +40,7 @@ cleanup () {
 trap cleanup EXIT
 cd "$tmp"
 
+# Define a command for downloading files with wget or curl.
 if command -v wget >/dev/null; then
   download () {
     wget --quiet -O "$1" "$2"
