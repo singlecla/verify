@@ -47,7 +47,7 @@ if command -v wget >/dev/null; then
   }
 elif command -v curl >/dev/null; then
   download () {
-    wget --quiet -O "$1" "$2"
+    curl --silent -o "$1" "$2"
   }
 else
   echo "Could not find either curl or wget on PATH.">/dev/stderr
