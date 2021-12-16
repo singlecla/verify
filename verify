@@ -88,6 +88,6 @@ if ! cmp user.md template.md >/dev/null; then
   exit 1
 fi
 
-# If they match, this users has signed a Single CLA.
+# If they match, this user has signed a Single CLA.
 echo "$host_display user $handle has signed Single CLA version $version."
 exit 0
