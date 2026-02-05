@@ -1,7 +1,7 @@
 ---
 name: SingleCLA Verification
 on:
-  pull-request:
+  pull_request:
     types: [opened, synchronize, reopened]
 jobs:
   singlecla:
