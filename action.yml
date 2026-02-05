@@ -1,5 +1,4 @@
 ---
-# GitHub Actions Workflow
 name: SingleCLA Verification
 on:
   pull_request:
